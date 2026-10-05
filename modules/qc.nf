@@ -1,5 +1,6 @@
 process QC {
-    conda "/home/arumuganainar.d/.conda/envs/spatial-tme"
+    label 'process_medium'
+    conda "${moduleDir}/../envs/spatial.yml"
     publishDir "${params.outdir}/qc", mode: 'copy'
 
     input:
@@ -12,5 +13,10 @@ process QC {
     script:
     """
     run_qc.py --h5ad ${h5ad_file} --min_genes ${params.min_genes} --max_mito_pct ${params.max_mito_pct} --out filtered.h5ad
+    """
+
+    stub:
+    """
+    touch filtered.h5ad filtered_qc_summary.txt
     """
 }

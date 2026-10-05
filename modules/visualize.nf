@@ -1,5 +1,5 @@
 process VISUALIZE {
-    conda "/home/arumuganainar.d/.conda/envs/spatial-tme"
+    conda "${moduleDir}/../envs/spatial.yml"
     publishDir "${params.outdir}/visualize", mode: 'copy'
 
     input:
@@ -13,5 +13,10 @@ process VISUALIZE {
     script:
     """
     run_visualization.py --h5ad ${h5ad_file} --out_prefix pipeline
+    """
+
+    stub:
+    """
+    touch pipeline_spatial_celltypes.png pipeline_enrichment_heatmap.png pipeline_report.md
     """
 }

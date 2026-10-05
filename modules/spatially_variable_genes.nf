@@ -1,5 +1,6 @@
 process SVG_DETECTION {
-    conda "/home/arumuganainar.d/.conda/envs/spatial-tme"
+    label 'process_medium'
+    conda "${moduleDir}/../envs/spatial.yml"
     publishDir "${params.outdir}/svg", mode: 'copy'
 
     input:
@@ -12,5 +13,10 @@ process SVG_DETECTION {
     script:
     """
     run_svg_detection.py --h5ad ${h5ad_file} --n_top_svgs ${params.n_top_svgs} --out svg.h5ad
+    """
+
+    stub:
+    """
+    touch svg.h5ad svg_svg_summary.txt
     """
 }

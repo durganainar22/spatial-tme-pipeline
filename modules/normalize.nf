@@ -1,5 +1,6 @@
 process NORMALIZE {
-    conda "/home/arumuganainar.d/.conda/envs/spatial-tme"
+    label 'process_medium'
+    conda "${moduleDir}/../envs/spatial.yml"
     publishDir "${params.outdir}/normalize", mode: 'copy'
 
     input:
@@ -12,5 +13,10 @@ process NORMALIZE {
     script:
     """
     run_normalization.py --h5ad ${h5ad_file} --n_top_genes ${params.n_top_genes} --out normalized.h5ad
+    """
+
+    stub:
+    """
+    touch normalized.h5ad normalized_norm_summary.txt
     """
 }

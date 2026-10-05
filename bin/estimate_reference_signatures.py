@@ -18,6 +18,7 @@ def main():
     parser.add_argument("--celltype_col", default="celltype_major", help="obs column with cell type labels")
     parser.add_argument("--batch_col", default="donor_id", help="obs column for batch/donor")
     parser.add_argument("--max_epochs", type=int, default=250)
+    parser.add_argument("--accelerator", default="gpu", help="gpu, cpu or auto")
     parser.add_argument("--out", required=True, help="Output directory for reference model + signatures")
     args = parser.parse_args()
 
@@ -48,10 +49,10 @@ def main():
     )
 
     mod = RegressionModel(adata_ref)
-    mod.train(max_epochs=args.max_epochs, accelerator="gpu")
+    mod.train(max_epochs=args.max_epochs, accelerator=args.accelerator)
 
     adata_ref = mod.export_posterior(
-        adata_ref, sample_kwargs={"num_samples": 1000, "batch_size": 2500, "accelerator": "gpu"}
+        adata_ref, sample_kwargs={"num_samples": 1000, "batch_size": 2500, "accelerator": args.accelerator}
     )
 
     mod.save(f"{args.out}/reference_model", overwrite=True)

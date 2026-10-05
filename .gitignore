@@ -5,3 +5,4 @@ test_data/
 .nextflow*
 *.pyc
 __pycache__/
+.conda_envs/
