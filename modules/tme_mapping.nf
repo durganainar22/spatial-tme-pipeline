@@ -1,5 +1,6 @@
 process TME_MAPPING {
-    conda "/home/arumuganainar.d/.conda/envs/spatial-tme"
+    label 'process_medium'
+    conda "${moduleDir}/../envs/spatial.yml"
     publishDir "${params.outdir}/tme", mode: 'copy'
 
     input:
@@ -11,6 +12,11 @@ process TME_MAPPING {
 
     script:
     """
-    run_tme_mapping.py --h5ad ${h5ad_file} --celltype_col celltype_major --n_perms 1000 --out tme.h5ad
+    run_tme_mapping.py --h5ad ${h5ad_file} --n_perms ${params.n_perms} --out tme.h5ad
+    """
+
+    stub:
+    """
+    touch tme.h5ad tme_tme_summary.txt
     """
 }

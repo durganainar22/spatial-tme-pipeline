@@ -19,6 +19,7 @@ def main():
     parser.add_argument("--ref_signatures", required=True)
     parser.add_argument("--celltype_col", default="celltype_major")
     parser.add_argument("--max_epochs", type=int, default=500)
+    parser.add_argument("--accelerator", default="gpu", help="gpu, cpu or auto")
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
 
@@ -64,10 +65,10 @@ def main():
         detection_alpha=20,
     )
 
-    mod.train(max_epochs=args.max_epochs, accelerator="gpu", train_size=1)
+    mod.train(max_epochs=args.max_epochs, accelerator=args.accelerator, train_size=1)
 
     adata_vis = mod.export_posterior(
-        adata_vis, sample_kwargs={"num_samples": 1000, "batch_size": adata_vis.n_obs, "accelerator": "gpu"}
+        adata_vis, sample_kwargs={"num_samples": 1000, "batch_size": adata_vis.n_obs, "accelerator": args.accelerator}
     )
 
     adata_vis.write_h5ad(args.out)

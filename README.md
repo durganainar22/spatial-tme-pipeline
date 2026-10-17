@@ -24,7 +24,7 @@ An end-to-end Nextflow DSL2 pipeline that processes 10x Visium spatial transcrip
             v
        VISUALIZE ----------> spatial plots, enrichment heatmap, summary report
 
-Each stage is an independent Nextflow process, chained via explicit channel outputs (Process.out.label). The pipeline runs across two isolated conda environments -- a lightweight scanpy/squidpy environment for stages 1-3 and 5-6, and a GPU-enabled cell2location environment for stage 4 -- selected automatically per-process via Nextflow's conda directive.
+Each stage is an independent Nextflow process, chained via explicit channel outputs (Process.out.label). The pipeline runs across two isolated conda environments -- a lightweight scanpy/squidpy environment for stages 1-3 and 5-6, and a GPU-enabled cell2location environment for stage 4 -- defined in `envs/` and selected per process via Nextflow's conda directive.
 
 ## Key results
 
@@ -53,32 +53,49 @@ On the demo dataset (10x Visium breast cancer, 3798 spots):
 
     .
     |-- main.nf                    # workflow definition, wires all processes together
-    |-- nextflow.config            # conda.enabled + global config
+    |-- nextflow.config            # params, profiles (conda, mamba, slurm)
+    |-- conf/
+    |   |-- base.config            # per-label cpus/memory/time, capped by --max_*
+    |   `-- slurm.config           # SLURM executor + GPU request for cell2location steps
+    |-- envs/
+    |   |-- spatial.yml            # scanpy/squidpy env (pinned)
+    |   `-- cell2location.yml      # cell2location/scvi-tools/torch env (pinned)
     |-- modules/                   # one .nf file per pipeline stage
     |   |-- qc.nf
     |   |-- normalize.nf
     |   |-- spatially_variable_genes.nf
+    |   |-- reference_signatures.nf
     |   |-- deconvolution.nf
     |   |-- tme_mapping.nf
     |   `-- visualize.nf
     |-- bin/                       # Python scripts called by each process
-    |   |-- run_qc.py
-    |   |-- run_normalization.py
-    |   |-- run_svg_detection.py
-    |   |-- estimate_reference_signatures.py
-    |   |-- run_deconvolution.py
-    |   |-- run_tme_mapping.py
-    |   `-- run_visualization.py
-    |-- test_data/                 # input spatial data + reference atlas
+    |-- scripts/download_data.py   # fetches the Visium sample + reference atlas into data/
+    |-- data/                      # inputs (gitignored)
     `-- results/                   # pipeline outputs (gitignored)
 
 ## Running the pipeline
 
-Requires two conda environments: spatial-tme (scanpy, squidpy, nextflow) and cell2location (torch, cell2location, scvi-tools). See bin/ scripts for exact package requirements.
+Requires Nextflow >= 24.04 and conda/mamba. Each process builds its environment from `envs/` on first use.
 
-    nextflow run main.nf
+1. Fetch the inputs (once, on a machine with internet access; the atlas is ~850 MB):
 
-Reference signatures must be pre-trained once via bin/estimate_reference_signatures.py before the first full pipeline run (see results/reference_model/ for the expected output location).
+        conda env create -f envs/spatial.yml
+        conda activate spatial-tme
+        python scripts/download_data.py
+
+2. Run on a SLURM cluster (GPU needed for the two cell2location steps):
+
+        nextflow run main.nf -profile conda,slurm
+
+   Queues default to `short` / `gpu`; change them with `--cpu_queue`, `--gpu_queue`, `--gpu_type v100`.
+
+   Or run locally with a GPU: `nextflow run main.nf -profile conda --max_memory 16.GB`
+
+The first run trains the reference signatures (REFERENCE_SIGNATURES) and publishes them to `results/reference/`. Later runs can skip that step:
+
+    nextflow run main.nf -profile conda,slurm --ref_signatures results/reference/reference_signatures.h5ad
+
+Add `-resume` to reuse cached steps. `-stub` runs the whole workflow with placeholder outputs to check the wiring without data or a GPU.
 
 ## Author
 
